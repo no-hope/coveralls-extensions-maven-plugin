@@ -26,13 +26,15 @@ package org.eluder.coveralls.maven.plugin.jacoco;
  * %[license]
  */
 
-import java.io.File;
-
+import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.eluder.coveralls.maven.plugin.AbstractCoverallsMojo;
 import org.eluder.coveralls.maven.plugin.CoverageParser;
 import org.eluder.coveralls.maven.plugin.domain.SourceLoader;
+
+import java.io.File;
 
 @Mojo(name = "jacoco", threadSafe = false)
 public class JaCoCoMojo extends AbstractCoverallsMojo {
@@ -42,6 +44,15 @@ public class JaCoCoMojo extends AbstractCoverallsMojo {
      */
     @Parameter(property = "coverageFile", defaultValue = "${project.reporting.outputDirectory}/jacoco/jacoco.xml")
     protected File coverageFile;
+
+    @Override
+    public void execute() throws MojoExecutionException, MojoFailureException {
+        if ("pom".equals(project.getPackaging())) {
+            getLog().info("Skipping Coverall for project with packaging type 'pom'");
+            return;
+        }
+        super.execute();
+    }
 
     @Override
     protected CoverageParser createCoverageParser(final SourceLoader sourceLoader) {
