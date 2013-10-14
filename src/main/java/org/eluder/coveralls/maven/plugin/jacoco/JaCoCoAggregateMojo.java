@@ -40,10 +40,9 @@ import org.eluder.coveralls.maven.plugin.domain.SourceLoader;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-@Mojo(name = "jacoco-aggregate", threadSafe = false)
+@Mojo(name = "jacoco-aggregate", threadSafe = false, aggregator = true)
 public class JaCoCoAggregateMojo extends AbstractCoverallsMojo {
 
     /**
@@ -52,25 +51,19 @@ public class JaCoCoAggregateMojo extends AbstractCoverallsMojo {
     @Parameter(property = "coverageFile", defaultValue = "jacoco/jacoco.xml")
     protected String coverageFile;
 
+    /**
+     * The projects in the reactor for aggregation report.
+     */
+    @Parameter(property = "reactorProjects", defaultValue = "${reactorProjects}", readonly = true)
+    private List<MavenProject> reactorProjects;
+
     private final List<File> aggregatedSourceRoots = new ArrayList<File>();
     private final List<File> coverageFiles = new ArrayList<File>();
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        final List<MavenProject> order = new ArrayList<MavenProject>();
-        MavenProject parent = project;
-        while (parent != null) {
-            final List<MavenProject> collectedProjects = parent.getCollectedProjects();
-            final List<MavenProject> list = new ArrayList<MavenProject>(
-                    collectedProjects == null ? new ArrayList<MavenProject>() : collectedProjects);
-
-            Collections.reverse(list);
-            order.addAll(0, list);
-            parent = parent.getParent();
-        }
-
-        if (!order.isEmpty() && order.get(0).equals(project)) {
-            for (final MavenProject mavenProject : order) {
+        if (isLastReactorProject()) {
+            for (final MavenProject mavenProject : reactorProjects) {
                 if ("pom".equals(mavenProject.getPackaging())) {
                     continue;
                 }
@@ -81,7 +74,7 @@ public class JaCoCoAggregateMojo extends AbstractCoverallsMojo {
                 if (reportFile.exists()) {
                     coverageFiles.add(reportFile);
                 } else {
-                    getLog().warn(reportFile + " does not exists");
+                    getLog().warn("Skipping report file " + reportFile + " (does not exists)");
                 }
 
                 for (final String s : mavenProject.getCompileSourceRoots()) {
@@ -100,6 +93,10 @@ public class JaCoCoAggregateMojo extends AbstractCoverallsMojo {
     @Override
     protected SourceLoader createSourceLoader() {
         return new SourceLoader(aggregatedSourceRoots, sourceEncoding);
+    }
+
+    private boolean isLastReactorProject() {
+        return !reactorProjects.isEmpty() && reactorProjects.get(reactorProjects.size() - 1).equals(project);
     }
 
     private final class MultipleCoverageParser implements CoverageParser {
