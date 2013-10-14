@@ -12,10 +12,10 @@ package org.eluder.coveralls.maven.plugin;
  * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
- * 
+ *
  * The above copyright notice and this permission notice shall be included in
  * all copies or substantial portions of the Software.
- * 
+ *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -25,14 +25,6 @@ package org.eluder.coveralls.maven.plugin;
  * THE SOFTWARE.
  * %[license]
  */
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
 
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -59,6 +51,14 @@ import org.eluder.coveralls.maven.plugin.service.Jenkins;
 import org.eluder.coveralls.maven.plugin.service.ServiceSetup;
 import org.eluder.coveralls.maven.plugin.service.Travis;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
 public abstract class AbstractCoverallsMojo extends AbstractMojo {
 
     /**
@@ -66,7 +66,7 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
      */
     @Parameter(property = "coverallsFile", defaultValue = "${project.build.directory}/coveralls.json")
     protected File coverallsFile;
-    
+
     /**
      * Url for the Coveralls API.
      */
@@ -78,49 +78,49 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
      */
     @Parameter(property = "sourceDirectories")
     protected List<File> sourceDirectories;
-    
+
     /**
      * Source file encoding.
      */
     @Parameter(property = "sourceEncoding", defaultValue = "${project.build.sourceEncoding}")
     protected String sourceEncoding;
-    
+
     /**
      * CI service name.
      */
     @Parameter(property = "serviceName")
     protected String serviceName;
-    
+
     /**
      * CI service job id.
      */
     @Parameter(property = "serviceJobId")
     protected String serviceJobId;
-    
+
     /**
      * CI service build number.
      */
     @Parameter(property = "serviceBuildNumber")
     protected String serviceBuildNumber;
-    
+
     /**
      * CI service build url.
      */
     @Parameter(property = "serviceBuildUrl")
     protected String serviceBuildUrl;
-    
+
     /**
      * CI service specific environment properties.
      */
     @Parameter(property = "serviceEnvironment")
     protected Properties serviceEnvironment;
-    
+
     /**
      * Coveralls repository token.
      */
     @Parameter(property = "repoToken")
     protected String repoToken;
-    
+
     /**
      * Git branch name.
      */
@@ -132,13 +132,13 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
      */
     @Parameter(property = "pullRequest")
     protected String pullRequest;
-    
+
     /**
      * Build timestamp. Must be in 'yyyy-MM-dd HH:mm:ssa' format.
      */
     @Parameter(property = "timestamp", defaultValue = "${timestamp}")
     protected Date timestamp;
-    
+
     /**
      * Dry run Coveralls report without actually sending it.
      */
@@ -150,20 +150,20 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
      */
     @Parameter(property = "coveralls.skip", defaultValue = "false")
     protected boolean skip;
-    
+
     /**
      * Maven project for runtime value resolution.
      */
     @Component
     protected MavenProject project;
-    
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         if (skip) {
             getLog().info("Skip property set, skipping plugin execution");
             return;
         }
-        
+
         try {
             createEnvironment().setup();
             CoverageParser parser = createCoverageParser(createSourceLoader());
@@ -175,11 +175,11 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
             reporters.add(new JobLogger(job));
             SourceCallback sourceCallback = createSourceCallbackChain(writer, reporters);
             reporters.add(new DryRunLogger(job.isDryRun(), writer.getCoverallsFile()));
-            
+
             report(reporters, Position.BEFORE);
             writeCoveralls(writer, sourceCallback, parser);
             report(reporters, Position.AFTER);
-            
+
             if (!job.isDryRun()) {
                 submitData(client, writer.getCoverallsFile());
             }
@@ -196,12 +196,12 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
 
     /**
      * Creates a coverage parser. Must return new instance on every call.
-     * 
+     *
      * @param sourceLoader the source loader to be used with parser
      * @return new instance of a coverage parser
      */
     protected abstract CoverageParser createCoverageParser(SourceLoader sourceLoader);
-    
+
     /**
      * @return source loader to create source files
      */
@@ -215,7 +215,7 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
     protected Environment createEnvironment() {
         return new Environment(this, getServices());
     }
-    
+
     /**
      * @return list of available continuous integration services
      */
@@ -229,7 +229,7 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
         services.add(new General(env));
         return services;
     }
-    
+
     /**
      * @return job that describes the coveralls report
      * @throws IOException if an I/O error occurs
@@ -249,7 +249,7 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
             .withPullRequest(pullRequest)
             .withGit(git);
     }
-    
+
     /**
      * @param job the job describing the coveralls report
      * @return JSON writer that writes the coveralls data
@@ -258,14 +258,14 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
     protected JsonWriter createJsonWriter(final Job job) throws IOException {
         return new JsonWriter(job, coverallsFile);
     }
-    
+
     /**
      * @return http client that submits the coveralls data
      */
     protected CoverallsClient createCoverallsClient() {
         return new CoverallsClient(coverallsUrl);
     }
-    
+
     /**
      * @param writer the JSON writer
      * @return source callback chain for different source handlers
@@ -279,7 +279,7 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
         }
         return chain;
     }
-    
+
     private void writeCoveralls(final JsonWriter writer, final SourceCallback sourceCallback, final CoverageParser parser) throws ProcessingException, IOException {
         try {
             getLog().info("Writing Coveralls data to " + writer.getCoverallsFile().getAbsolutePath() + " from coverage report " + parser.getCoverageFile().getAbsolutePath());
@@ -293,7 +293,7 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
             writer.close();
         }
     }
-    
+
     private void submitData(final CoverallsClient client, final File coverallsFile) throws MojoFailureException, ProcessingException, IOException {
         getLog().info("Submitting Coveralls data to API");
         long now = System.currentTimeMillis();
@@ -309,7 +309,7 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
             throw new MojoFailureException("Failed to submit coveralls report: " + response.getMessage());
         }
     }
-    
+
     private void report(final List<Logger> reporters, final Position position) {
         for (Logger reporter : reporters) {
             if (position.equals(reporter.getPosition())) {
