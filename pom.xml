@@ -12,12 +12,17 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>maven-plugin</packaging>
 
-	<name>coveralls-maven-plugin</name>
+	<name>coveralls-extensions-maven-plugin</name>
 	<description>Maven plugin for submitting Java code coverage reports to Coveralls web service.</description>
 	<url>https://github.com/no-hope/coveralls-extensions-maven-plugin</url>
 	<inceptionYear>2013</inceptionYear>
 
 	<developers>
+		<developer>
+			<id>ketoth.xupack</id>
+			<name>Ketoth Xupack</name>
+			<email>ketoth.xupack@gmail.com</email>
+		</developer>
 		<developer>
 			<name>Tapio Rautonen</name>
 		</developer>
