@@ -3,6 +3,7 @@ package org.eluder.coveralls.maven.plugin.domain;
 import java.util.Date;
 import java.util.Properties;
 
+import org.eluder.coveralls.maven.plugin.domain.Git.Remote;
 import org.eluder.coveralls.maven.plugin.validation.JobValidator;
 import org.eluder.coveralls.maven.plugin.validation.ValidationErrors;
 
@@ -10,7 +11,7 @@ import org.eluder.coveralls.maven.plugin.validation.ValidationErrors;
  * #[license]
  * coveralls-maven-plugin
  * %%
- * Copyright (C) 2013 Tapio Rautonen
+ * Copyright (C) 2013 - 2014 Tapio Rautonen
  * %%
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -138,6 +139,13 @@ public class Job {
     }
     
     public String getBranch() {
+        if (branch != null && getGit() != null && getGit().getRemotes() != null) {
+            for (Remote remote : getGit().getRemotes()) {
+                if (branch.startsWith(remote.getName() + "/")) {
+                    return branch.substring(remote.getName().length() + 1);
+                }
+            }
+        }
         return branch;
     }
     

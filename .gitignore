@@ -1,5 +1,14 @@
 target
-﻿target/*
+target/*
+
+# Eclipse
 .settings
 .project
 .classpath
+
+# Idea
+*.iml
+.idea
+
+# Atlassian
+atlassian-ide-plugin.xml

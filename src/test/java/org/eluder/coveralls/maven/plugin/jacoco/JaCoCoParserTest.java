@@ -4,7 +4,7 @@ package org.eluder.coveralls.maven.plugin.jacoco;
  * #[license]
  * coveralls-maven-plugin
  * %%
- * Copyright (C) 2013 Tapio Rautonen
+ * Copyright (C) 2013 - 2014 Tapio Rautonen
  * %%
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -29,6 +29,7 @@ package org.eluder.coveralls.maven.plugin.jacoco;
 import java.io.File;
 
 import org.eluder.coveralls.maven.plugin.AbstractCoverageParserTest;
+import org.eluder.coveralls.maven.plugin.CoverageFixture;
 import org.eluder.coveralls.maven.plugin.CoverageParser;
 import org.eluder.coveralls.maven.plugin.domain.SourceLoader;
 
@@ -41,6 +42,11 @@ public class JaCoCoParserTest extends AbstractCoverageParserTest {
     
     @Override
     protected String getCoverageResource() {
-        return "/jacoco.xml";
+        return "jacoco.xml";
+    }
+
+    @Override
+    protected String[][] getCoverageFixture() {
+        return CoverageFixture.JAVA_FILES;
     }
 }

@@ -4,7 +4,7 @@ package org.eluder.coveralls.maven.plugin;
  * #[license]
  * coveralls-maven-plugin
  * %%
- * Copyright (C) 2013 Tapio Rautonen
+ * Copyright (C) 2013 - 2014 Tapio Rautonen
  * %%
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -27,15 +27,10 @@ package org.eluder.coveralls.maven.plugin;
  */
 
 import static org.hamcrest.Matchers.containsString;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -102,8 +97,8 @@ public abstract class AbstractCoverallsMojoTest {
             @Override
             public Source answer(final InvocationOnMock invocation) throws Throwable {
                 String sourceFile = invocation.getArguments()[0].toString();
-                String content = TestIoUtil.readFileContent(TestIoUtil.getFile("/" + new File(sourceFile).getName()));
-                return new Source(invocation.getArguments()[0].toString(), content);
+                String content = readFileContent(sourceFile);
+                return new Source(sourceFile, content);
             }
         });
         when(logMock.isInfoEnabled()).thenReturn(true);
@@ -148,7 +143,7 @@ public abstract class AbstractCoverallsMojoTest {
         sourceRoots.add(folder.getRoot().getAbsolutePath());
         when(collectedProjectMock.getCompileSourceRoots()).thenReturn(sourceRoots);
     }
-    
+
     @Test
     public void testDefaultBehavior() throws Exception {
         mojo = new AbstractCoverallsMojo() {
@@ -175,19 +170,19 @@ public abstract class AbstractCoverallsMojoTest {
         when(coverallsClientMock.submit(any(File.class))).thenReturn(new CoverallsResponse("success", false, null));
         mojo.execute();
         String json = TestIoUtil.readFileContent(coverallsFile);
-        
         assertNotNull(json);
-        for (String[] coverageFile : CoverageFixture.COVERAGE_FILES) {
+        
+        String[][] fixture = getCoverageFixture();
+        for (String[] coverageFile : fixture) {
             assertThat(json, containsString(coverageFile[0]));
         }
-        
-        verify(logMock).info("Gathered code coverage metrics for 2 source files with 44 lines of code:");
-        verify(logMock).info("*** It might take hours for Coveralls to update the actual coverage numbers for a job");
+
+        verifySuccessfullSubmit(logMock, fixture);
     }
-    
+
     @Test(expected = MojoFailureException.class)
     public void testFailedSubmission() throws Exception {
-        when(coverallsClientMock.submit(any(File.class))).thenReturn(new CoverallsResponse("failure", true, null));
+        when(coverallsClientMock.submit(any(File.class))).thenThrow(ProcessingException.class);
         mojo.execute();
     }
     
@@ -233,4 +228,15 @@ public abstract class AbstractCoverallsMojoTest {
     }
     
     protected abstract AbstractCoverallsMojo createMojo();
+
+    protected abstract String[][] getCoverageFixture();
+
+    public static void verifySuccessfullSubmit(Log logMock, String[][] fixture) {
+        verify(logMock).info("Gathered code coverage metrics for " + CoverageFixture.getTotalFiles(fixture) + " source files with " + CoverageFixture.getTotalLines(fixture) + " lines of code:");
+        verify(logMock).info("*** It might take hours for Coveralls to update the actual coverage numbers for a job");
+    }
+
+    protected String readFileContent(final String sourceFile) throws IOException {
+        return TestIoUtil.readFileContent(TestIoUtil.getFile(sourceFile));
+    }
 }

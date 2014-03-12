@@ -4,7 +4,7 @@ package org.eluder.coveralls.maven.plugin;
  * #[license]
  * coveralls-maven-plugin
  * %%
- * Copyright (C) 2013 Tapio Rautonen
+ * Copyright (C) 2013 - 2014 Tapio Rautonen
  * %%
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,6 +26,15 @@ package org.eluder.coveralls.maven.plugin;
  * %[license]
  */
 
+
+import java.io.File;
+import java.io.IOException;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -51,14 +60,6 @@ import org.eluder.coveralls.maven.plugin.service.Jenkins;
 import org.eluder.coveralls.maven.plugin.service.ServiceSetup;
 import org.eluder.coveralls.maven.plugin.service.Travis;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
 public abstract class AbstractCoverallsMojo extends AbstractMojo {
 
     /**
@@ -78,6 +79,12 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
      */
     @Parameter(property = "sourceDirectories")
     protected List<File> sourceDirectories;
+
+    /**
+     * Source urls.
+     */
+    @Parameter(property = "sourceUrls")
+    protected List<URL> sourceUrls;
 
     /**
      * Source file encoding.
@@ -166,7 +173,8 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
 
         try {
             createEnvironment().setup();
-            CoverageParser parser = createCoverageParser(createSourceLoader());
+            SourceLoader sourceLoader = createSourceLoader();
+            CoverageParser parser = createCoverageParser(sourceLoader);
             Job job = createJob();
             job.validate().throwOrInform(getLog());
             JsonWriter writer = createJsonWriter(job);
@@ -177,18 +185,16 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
             reporters.add(new DryRunLogger(job.isDryRun(), writer.getCoverallsFile()));
 
             report(reporters, Position.BEFORE);
-            writeCoveralls(writer, sourceCallback, parser);
+            writeCoveralls(writer, sourceLoader, sourceCallback, parser);
             report(reporters, Position.AFTER);
 
             if (!job.isDryRun()) {
                 submitData(client, writer.getCoverallsFile());
             }
-        } catch (MojoFailureException ex) {
-            throw ex;
         } catch (ProcessingException ex) {
             throw new MojoFailureException("Processing of input or output data failed", ex);
         } catch (IOException ex) {
-            throw new MojoFailureException("IO operation failed", ex);
+            throw new MojoFailureException("I/O operation failed", ex);
         } catch (Exception ex) {
             throw new MojoExecutionException("Build error", ex);
         }
@@ -206,7 +212,7 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
      * @return source loader to create source files
      */
     protected SourceLoader createSourceLoader() {
-        return new SourceLoader(sourceDirectories, sourceEncoding);
+        return new SourceLoader(sourceDirectories, sourceUrls, sourceEncoding);
     }
 
     /**
@@ -280,7 +286,7 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
         return chain;
     }
 
-    private void writeCoveralls(final JsonWriter writer, final SourceCallback sourceCallback, final CoverageParser parser) throws ProcessingException, IOException {
+    protected void writeCoveralls(final JsonWriter writer, final SourceLoader sourceLoader, final SourceCallback sourceCallback, final CoverageParser parser) throws ProcessingException, IOException {
         try {
             getLog().info("Writing Coveralls data to " + writer.getCoverallsFile().getAbsolutePath() + " from coverage report " + parser.getCoverageFile().getAbsolutePath());
             long now = System.currentTimeMillis();
@@ -294,19 +300,24 @@ public abstract class AbstractCoverallsMojo extends AbstractMojo {
         }
     }
 
-    private void submitData(final CoverallsClient client, final File coverallsFile) throws MojoFailureException, ProcessingException, IOException {
+    private void submitData(final CoverallsClient client, final File coverallsFile) throws ProcessingException, IOException {
         getLog().info("Submitting Coveralls data to API");
         long now = System.currentTimeMillis();
-        CoverallsResponse response = client.submit(coverallsFile);
-        long duration = System.currentTimeMillis() - now;
-        if (!response.isError()) {
+        try {
+            CoverallsResponse response = client.submit(coverallsFile);
+            long duration = System.currentTimeMillis() - now;
             getLog().info("Successfully submitted Coveralls data in " + duration + "ms for " + response.getMessage());
             getLog().info(response.getUrl());
             getLog().info("*** It might take hours for Coveralls to update the actual coverage numbers for a job");
             getLog().info("    If you see question marks in the report, please be patient");
-        } else {
-            getLog().error("Failed to submit Coveralls data in " + duration + "ms");
-            throw new MojoFailureException("Failed to submit coveralls report: " + response.getMessage());
+        } catch (ProcessingException ex) {
+            long duration = System.currentTimeMillis() - now;
+            getLog().error("Submission failed in " + duration + "ms while processing data");
+            throw ex;
+        } catch (IOException ex) {
+            long duration = System.currentTimeMillis() - now;
+            getLog().error("Submission failed in " + duration + "ms while handling I/O operations");
+            throw ex;
         }
     }
 

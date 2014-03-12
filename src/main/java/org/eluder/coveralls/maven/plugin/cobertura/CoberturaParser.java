@@ -4,7 +4,7 @@ package org.eluder.coveralls.maven.plugin.cobertura;
  * #[license]
  * coveralls-maven-plugin
  * %%
- * Copyright (C) 2013 Tapio Rautonen
+ * Copyright (C) 2013 - 2014 Tapio Rautonen
  * %%
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -40,8 +40,8 @@ import org.eluder.coveralls.maven.plugin.domain.SourceLoader;
 
 public class CoberturaParser extends AbstractXmlEventParser {
 
-    private Source source;
-    private boolean inMethods;
+    protected Source source;
+    protected boolean inMethods;
     
     public CoberturaParser(final File coverageFile, final SourceLoader sourceLoader) {
         super(coverageFile, sourceLoader);

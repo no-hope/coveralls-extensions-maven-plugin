@@ -4,7 +4,7 @@ package org.eluder.coveralls.maven.plugin.util;
  * #[license]
  * coveralls-maven-plugin
  * %%
- * Copyright (C) 2013 Tapio Rautonen
+ * Copyright (C) 2013 - 2014 Tapio Rautonen
  * %%
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -60,7 +60,14 @@ public class TestIoUtil {
     
     public static File getFile(final String resource) {
         try {
-            return new File(getResourceUrl(resource).toURI());
+            String local = resource;
+            if (local.lastIndexOf("/") > 0) {
+                local = local.substring(local.lastIndexOf('/'));
+            }
+            if (!local.startsWith("/")) {
+                local = "/" + local;
+            }
+            return new File(getResourceUrl(local).toURI());
         } catch (URISyntaxException ex) {
             throw new IllegalArgumentException(ex);
         }

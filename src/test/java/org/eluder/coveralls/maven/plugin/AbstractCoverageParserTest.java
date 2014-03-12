@@ -4,7 +4,7 @@ package org.eluder.coveralls.maven.plugin;
  * #[license]
  * coveralls-maven-plugin
  * %%
- * Copyright (C) 2013 Tapio Rautonen
+ * Copyright (C) 2013 - 2014 Tapio Rautonen
  * %%
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -58,35 +58,45 @@ import org.mockito.stubbing.Answer;
 public abstract class AbstractCoverageParserTest {
     
     @Mock
-    private SourceLoader sourceLoaderMock;
+    protected SourceLoader sourceLoaderMock;
     
     @Mock
-    private SourceCallback sourceCallbackMock;
+    protected SourceCallback sourceCallbackMock;
     
     @Before
     public void init() throws IOException {
-        for (String[] coverageFile : CoverageFixture.COVERAGE_FILES) {
-            final String name = coverageFile[0];
-            final String content = TestIoUtil.readFileContent(TestIoUtil.getFile("/" + name));
-            when(sourceLoaderMock.load("org/eluder/coverage/sample/" + name)).then(new Answer<Source>() {
-                @Override
-                public Source answer(final InvocationOnMock invocation) throws Throwable {
-                    return new Source("org/eluder/coverage/sample/" + name, content);
-                }
-            });
+        for (String[] coverageFile : getCoverageFixture()) {
+            final String name = sourceName(coverageFile[0]);
+            final String content = TestIoUtil.readFileContent(TestIoUtil.getFile(name));
+            when(sourceLoaderMock.load(name)).then(sourceAnswer(name, content));
         }
     }
     
+    protected String sourceName(final String coverageFile) {
+        return coverageFile;
+    }
+    
+    protected Answer<Source> sourceAnswer(final String name, final String content) {
+        return new Answer<Source>() {
+            @Override
+            public Source answer(final InvocationOnMock invocation) throws Throwable {
+                return new Source(name, content);
+            }
+        };
+    }
+
     @Test
     public void testParseCoverage() throws Exception {
         CoverageParser parser = createCoverageParser(TestIoUtil.getFile(getCoverageResource()), sourceLoaderMock);
         parser.parse(sourceCallbackMock);
         
+        String[][] fixture = getCoverageFixture();
+        
         ArgumentCaptor<Source> captor = ArgumentCaptor.forClass(Source.class);
-        verify(sourceCallbackMock, atLeast(CoverageFixture.COVERAGE_FILES.length)).onSource(captor.capture());
+        verify(sourceCallbackMock, atLeast(CoverageFixture.getTotalFiles(fixture))).onSource(captor.capture());
         
         Collection<Source> combined = combineCoverage(captor.getAllValues());
-        for (String[] coverageFile : CoverageFixture.COVERAGE_FILES) {
+        for (String[] coverageFile : fixture) {
             assertCoverage(combined, coverageFile[0], Integer.parseInt(coverageFile[1]), toSet(coverageFile[2]), toSet(coverageFile[3]));
         }
     }
@@ -94,6 +104,8 @@ public abstract class AbstractCoverageParserTest {
     protected abstract CoverageParser createCoverageParser(File coverageFile, SourceLoader sourceLoader);
     
     protected abstract String getCoverageResource();
+
+    protected abstract String[][] getCoverageFixture();
     
     private Collection<Source> combineCoverage(final List<Source> sources) {
         Map<String, Source> combined = new HashMap<String, Source>();
@@ -113,6 +125,10 @@ public abstract class AbstractCoverageParserTest {
     }
     
     private Set<Integer> toSet(final String commaSeparated) {
+        if (commaSeparated.isEmpty()) {
+            return new HashSet<Integer>(0);
+        }
+
         String[] split = commaSeparated.split(",");
         Set<Integer> values = new HashSet<Integer>(split.length);
         for (String value : split) {

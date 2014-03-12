@@ -4,7 +4,7 @@ package org.eluder.coveralls.maven.plugin;
  * #[license]
  * coveralls-maven-plugin
  * %%
- * Copyright (C) 2013 Tapio Rautonen
+ * Copyright (C) 2013 - 2014 Tapio Rautonen
  * %%
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -26,12 +26,39 @@ package org.eluder.coveralls.maven.plugin;
  * %[license]
  */
 
-public class CoverageFixture {
+import org.apache.commons.lang3.ArrayUtils;
 
-    public static final String[][] COVERAGE_FILES = new String[][] {
-        // file                      lines  covered lines            missed lines
-        { "SimpleCoverage.java",     "14",  "3,6",                   "10,11" },
-        { "InnerClassCoverage.java", "30",  "3,6,9,10,12,15,18,21",  "25,26" }
+public final class CoverageFixture {
+
+    public static String[][] JAVA_FILES = new String[][] {
+            // file                                                 lines  covered lines            missed lines
+            { "org/eluder/coverage/sample/SimpleCoverage.java",     "14",  "3,6",                   "10,11" },
+            { "org/eluder/coverage/sample/InnerClassCoverage.java", "30",  "3,6,9,10,12,15,18,21",  "25,26" }
     };
+
+    public static String[][] JAVASCRIPT_FILES = new String[][] {
+            // file                 lines   covered lines   missed lines
+            { "Localization.js",    "18",   "1,2,4,5,9,13", "6,10" },
+            { "Components.js",      "5",    "1,2",          ""     }
+    };
+
+    public static String[][] JAVA_AND_JAVASCRIPT_FILES = ArrayUtils.addAll(
+            JAVA_FILES, JAVASCRIPT_FILES
+    );
     
+    public static int getTotalLines(String[][] fixture) {
+        int lines = 0;
+        for (String[] file : fixture) {
+            lines += Integer.parseInt(file[1]);
+        }
+        return lines;
+    }
+    
+    public static int getTotalFiles(String[][] fixture) {
+        return fixture.length;
+    }
+    
+    private CoverageFixture() {
+        // hide constructor
+    }
 }

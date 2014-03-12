@@ -4,7 +4,7 @@ package org.eluder.coveralls.maven.plugin.cobertura;
  * #[license]
  * coveralls-maven-plugin
  * %%
- * Copyright (C) 2013 Tapio Rautonen
+ * Copyright (C) 2013 - 2014 Tapio Rautonen
  * %%
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -28,6 +28,7 @@ package org.eluder.coveralls.maven.plugin.cobertura;
 
 import org.eluder.coveralls.maven.plugin.AbstractCoverallsMojo;
 import org.eluder.coveralls.maven.plugin.AbstractCoverallsMojoTest;
+import org.eluder.coveralls.maven.plugin.CoverageFixture;
 import org.eluder.coveralls.maven.plugin.util.TestIoUtil;
 
 public class CoberturaMojoTest extends AbstractCoverallsMojoTest {
@@ -35,8 +36,12 @@ public class CoberturaMojoTest extends AbstractCoverallsMojoTest {
     @Override
     protected AbstractCoverallsMojo createMojo() {
         CoberturaMojo mojo = new CoberturaMojo();
-        mojo.coverageFile = TestIoUtil.getFile("/cobertura.xml");
+        mojo.coverageFile = TestIoUtil.getFile("cobertura.xml");
         return mojo;
     }
-    
+
+    @Override
+    protected String[][] getCoverageFixture() {
+        return CoverageFixture.JAVA_FILES;
+    }
 }
