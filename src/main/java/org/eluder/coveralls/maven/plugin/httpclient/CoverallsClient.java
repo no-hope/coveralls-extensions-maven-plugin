@@ -28,6 +28,7 @@ package org.eluder.coveralls.maven.plugin.httpclient;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.Consts;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.HttpClient;
@@ -54,6 +55,7 @@ import javax.net.ssl.X509TrustManager;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.nio.charset.Charset;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 import java.security.Provider;
@@ -64,6 +66,7 @@ import java.security.cert.X509Certificate;
 import static org.apache.http.conn.ssl.SSLConnectionSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER;
 
 public class CoverallsClient {
+    private static final X509TrustManager TRUST_ALL = new TrustAll();
 
     static {
         for (Provider provider : Security.getProviders()) {
@@ -109,7 +112,10 @@ public class CoverallsClient {
         ContentType contentType = ContentType.getOrDefault(entity);
         InputStreamReader reader = null;
         try {
-            reader = new InputStreamReader(entity.getContent(), contentType.getCharset());
+            final Charset charset = contentType.getCharset();
+            reader = new InputStreamReader(entity.getContent(),
+                    charset == null ? Consts.ISO_8859_1 : contentType.getCharset());
+
             CoverallsResponse cr = objectMapper.readValue(reader, CoverallsResponse.class);
             if (cr.isError()) {
                 throw new ProcessingException(getResponseErrorMessage(response, cr.getMessage()));
@@ -147,7 +153,7 @@ public class CoverallsClient {
 
         try {
             final SSLContext sslContext = SSLContext.getInstance("SSL");
-            sslContext.init(null, new TrustManager[] {new TrustAll()}, new SecureRandom());
+            sslContext.init(null, new TrustManager[] {TRUST_ALL}, new SecureRandom());
             final SSLConnectionSocketFactory factory =
                     new SSLConnectionSocketFactory(sslContext, ALLOW_ALL_HOSTNAME_VERIFIER);
             final Registry<ConnectionSocketFactory> registry =
