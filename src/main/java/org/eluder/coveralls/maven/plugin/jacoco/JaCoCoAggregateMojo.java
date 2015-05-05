@@ -78,7 +78,10 @@ public class JaCoCoAggregateMojo extends AbstractCoverallsMojo {
                 }
 
                 for (final String s : mavenProject.getCompileSourceRoots()) {
-                    aggregatedSourceRoots.add(new File(s));
+                    final File file = new File(s);
+                    if (file.exists()) {
+                        aggregatedSourceRoots.add(file);
+                    }
                 }
             }
             super.execute();
